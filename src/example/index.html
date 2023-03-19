@@ -9,45 +9,16 @@
 </head>
 
 <body>
-  <script src="./utils/index.js"></script>
+  <script src="../../utils/index.js"></script>
+  <script src="./tran/dist/fragment.js"></script>
+  <script src="./tran/dist/vertex.js"></script>
   <canvas id="canvas">
     不支持canvas
   </canvas>
   <script>
-    const ctx = document.getElementById('canvas')
-    const gl = ctx.getContext('webgl')
-    const vertexShader = `
-      //浮点数设置为中等精度
-      precision mediump float;
-      //接收 JavaScript 传递过来的点的坐标（X, Y）
-      attribute vec2 a_Position;
-      // 接收canvas的尺寸。
-      attribute vec2 a_Screen_Size;
-      attribute vec4 a_Color;
-      varying vec4 v_Color;
-      void main(){
-        // 将 canvas 的坐标值 转换为 [-1.0, 1.0]的范围。
-        vec2 position = (a_Position / a_Screen_Size) * 2.0 - 1.0;
-        // canvas的 Y 轴坐标方向和 设备坐标系的相反。
-        position = position * vec2(1.0, -1.0);
-        // 最终的顶点坐标。
-        gl_Position = vec4(position, 0.0, 1.0);
-        v_Color = a_Color;
-      }
-    `
-    const fragmentShader = `
-      //浮点数设置为中等精度
-      precision mediump float;
-      // 用来接收顶点着色器插值后的颜色。
-      varying vec4 v_Color;
+    const canvas = document.getElementById('canvas')
+    const gl = canvas.getContext('webgl')
 
-      void main() {
-        // 将颜色处理成 GLSL 允许的范围[0， 1]。
-        vec4 color = v_Color / vec4(255, 255, 255, 1);
-        // 点的最终颜色。
-        gl_FragColor = color;
-      }
-    `
     let program = initShader(gl, vertexShader, fragmentShader)
 
     gl.useProgram(program)

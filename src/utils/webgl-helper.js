@@ -1,5 +1,5 @@
 var random = Math.random;
-function randomColor() {
+function randomColor () {
   return {
     r: random() * 255,
     g: random() * 255,
@@ -8,7 +8,7 @@ function randomColor() {
   };
 }
 
-function $$(str) {
+function $$ (str) {
   if (!str) return null;
   if (str.startsWith('#')) {
     return document.querySelector(str);
@@ -20,11 +20,11 @@ function $$(str) {
   return result;
 }
 
-function getCanvas(id) {
+function getCanvas (id) {
   return $$(id);
 }
 
-function resizeCanvas(canvas, width, height) {
+function resizeCanvas (canvas, width, height) {
   if (canvas.width !== width) {
     canvas.width = width ? width : window.innerWidth;
   }
@@ -33,17 +33,17 @@ function resizeCanvas(canvas, width, height) {
   }
 }
 
-function getContext(canvas) {
+function getContext (canvas) {
   return canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 }
-function getTouchEvent() {
+function getTouchEvent () {
   var supportTouchEvent = 'ontouchstart' in window;
   var dragStartEvent = supportTouchEvent ? 'touchstart' : 'mousedown';
   var dragMoveEvent = supportTouchEvent ? 'touchmove' : 'mousemove';
   var dragEndEvent = supportTouchEvent ? 'touchend' : 'mouseup';
 }
 
-function createShader(gl, type, source) {
+function createShader (gl, type, source) {
   let shader = gl.createShader(type);
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
@@ -63,17 +63,17 @@ function createShader(gl, type, source) {
  * @param {*} str，着色器源码
  * @returns 返回着色器对象
  */
-function createShaderFromString(gl, type, str) {
+function createShaderFromString (gl, type, str) {
   return createShader(gl, type, str);
 }
-function createShaderFromScript(gl, type, scriptId) {
+function createShaderFromScript (gl, type, scriptId) {
   let sourceScript = $$('#' + scriptId);
   if (!sourceScript) {
     return null;
   }
   return createShader(gl, type, sourceScript.innerHTML);
 }
-function createProgramFromString(gl, vertexString, fragmentString) {
+function createProgramFromString (gl, vertexString, fragmentString) {
   //创建顶点着色器
   let vertexShader = createShaderFromString(
     gl,
@@ -91,7 +91,7 @@ function createProgramFromString(gl, vertexString, fragmentString) {
   let program = createProgram(gl, vertexShader, fragmentShader);
   return program;
 }
-function createProgram(gl, vertexShader, fragmentShader) {
+function createProgram (gl, vertexShader, fragmentShader) {
   let program = gl.createProgram();
   vertexShader && gl.attachShader(program, vertexShader);
   fragmentShader && gl.attachShader(program, fragmentShader);
@@ -111,7 +111,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
   gl.deleteProgram(program);
   throw errorLog;
 }
-function createSimpleProgram(gl, vertexShader, fragmentShader) {
+function createSimpleProgram (gl, vertexShader, fragmentShader) {
   if (!vertexShader || !fragmentShader) {
     console.warn('着色器不能为空');
     return;
@@ -127,7 +127,7 @@ function createSimpleProgram(gl, vertexShader, fragmentShader) {
   console.error(gl.getProgramInfoLog(program));
   gl.deleteProgram(program);
 }
-function createSimpleProgramFromScript(gl, vertexScriptId, fragmentScriptId) {
+function createSimpleProgramFromScript (gl, vertexScriptId, fragmentScriptId) {
   let vertexShader = createShaderFromScript(
     gl,
     gl.VERTEX_SHADER,
@@ -141,7 +141,7 @@ function createSimpleProgramFromScript(gl, vertexScriptId, fragmentScriptId) {
   let program = createSimpleProgram(gl, vertexShader, fragmentShader);
   return program;
 }
-function createProgramFromScript(gl, vertexScriptId, fragmentScriptId) {
+function createProgramFromScript (gl, vertexScriptId, fragmentScriptId) {
   let vertexShader = createShaderFromScript(
     gl,
     gl.VERTEX_SHADER,
@@ -155,8 +155,8 @@ function createProgramFromScript(gl, vertexScriptId, fragmentScriptId) {
   let program = createProgram(gl, vertexShader, fragmentShader);
   return program;
 }
-function createBuffer(gl, attribute, vertexAttribPointer) {
-  let {size, type, normalize, stride, offset} = vertexAttribPointer;
+function createBuffer (gl, attribute, vertexAttribPointer) {
+  let { size, type, normalize, stride, offset } = vertexAttribPointer;
   gl.enableVertexAttribArray(attribute);
   let buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -171,10 +171,10 @@ function createBuffer(gl, attribute, vertexAttribPointer) {
   return buffer;
 }
 
-function loadTexture(gl, src, attribute, callback) {
+function loadTexture (gl, src, attribute, callback) {
   let img = new Image();
   img.crossOrigin = 'anonymous';
-  img.onload = function() {
+  img.onload = function () {
     gl.activeTexture(gl.TEXTURE0);
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -187,7 +187,7 @@ function loadTexture(gl, src, attribute, callback) {
   img.src = src;
 }
 
-function createColorForVertex(vertex, c) {
+function createColorForVertex (vertex, c) {
   let vertexNums = vertex.positions;
   let colors = [];
   let color = c || {
@@ -206,8 +206,8 @@ function createColorForVertex(vertex, c) {
   return vertex;
 }
 
-function createAttributeSetter(gl, attributeIndex) {
-  return function(bufferInfo) {
+function createAttributeSetter (gl, attributeIndex) {
+  return function (bufferInfo) {
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.buffer);
     gl.enableVertexAttribArray(attributeIndex);
     gl.vertexAttribPointer(
@@ -221,11 +221,11 @@ function createAttributeSetter(gl, attributeIndex) {
   };
 }
 
-function getVariableCounts(gl, program, type) {
+function getVariableCounts (gl, program, type) {
   return gl.getProgramParameter(program, type);
 }
 
-function createAttributeSetters(gl, program) {
+function createAttributeSetters (gl, program) {
   let attributesCount = getVariableCounts(gl, program, gl.ACTIVE_ATTRIBUTES);
   let attributeSetter = {};
   for (let i = 0; i < attributesCount; i++) {
@@ -239,7 +239,7 @@ function createAttributeSetters(gl, program) {
   return attributeSetter;
 }
 
-function createUniformSetters(gl, program) {
+function createUniformSetters (gl, program) {
   let uniformSetters = {};
   let uniformsCount = getVariableCounts(gl, program, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < uniformsCount; i++) {
@@ -260,86 +260,86 @@ function createUniformSetters(gl, program) {
 let enums = {
   FLOAT_VEC2: {
     value: 0x8b50,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform2fv(location, v);
     }
   },
   FLOAT_VEC3: {
     value: 0x8b51,
-    setter: function(location, v) {
+    setter: function (location, v) {
       console.log(v);
       gl.uniform3fv(location, v);
     }
   },
   FLOAT_VEC4: {
     value: 0x8b52,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform3fv(location, v);
     }
   },
   INT_VEC2: {
     value: 0x8b53,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform2iv(location, v);
     }
   },
   INT_VEC3: {
     value: 0x8b54,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform3iv(location, v);
     }
   },
   INT_VEC4: {
     value: 0x8b55,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform4iv(location, v);
     }
   },
   BOOL: {
     value: 0x8b56,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform1iv(location, v);
     }
   },
   BOOL_VEC2: {
     value: 0x8b57,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform2iv(location, v);
     }
   },
   BOOL_VEC3: {
     value: 0x8b58,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform3iv(location, v);
     }
   },
   BOOL_VEC4: {
     value: 0x8b59,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform4iv(location, v);
     }
   },
   FLOAT_MAT2: {
     value: 0x8b5a,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniformMatrix2fv(location, false, v);
     }
   },
   FLOAT_MAT3: {
     value: 0x8b5b,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniformMatrix3fv(location, false, v);
     }
   },
   FLOAT_MAT4: {
     value: 0x8b5c,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniformMatrix4fv(location, false, v);
     }
   },
   SAMPLER_2D: {
     value: 0x8b5e,
-    setter: function(location, texture) {
+    setter: function (location, texture) {
       gl.uniform1i(location, 0);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -347,7 +347,7 @@ let enums = {
   },
   SAMPLER_CUBE: {
     value: 0x8b60,
-    setter: function(location, texture) {
+    setter: function (location, texture) {
       gl.uniform1i(location, 0);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
@@ -356,48 +356,48 @@ let enums = {
 
   INT: {
     value: 0x1404,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform1i(location, v);
     }
   },
 
   FLOAT: {
     value: 0x1406,
-    setter: function(location, v) {
+    setter: function (location, v) {
       gl.uniform1f(location, v);
     }
   }
 };
-function getKeyFromType(type) {
+function getKeyFromType (type) {
   for (let i in enums) {
     if (enums[i].value == type) {
       return i;
     }
   }
 }
-function createUniformSetter(gl, program, uniformInfo) {
+function createUniformSetter (gl, program, uniformInfo) {
   let uniformLocation = gl.getUniformLocation(program, uniformInfo.name);
   let type = uniformInfo.type;
   let isArray = uniformInfo.size > 1 && uniformInfo.name.substr(-3) === '[0]';
 
   if (isArray && type == enums.INT.value) {
-    return function(v) {
+    return function (v) {
       gl.uniform1iv(uniformLocation, v);
     };
   }
   if (isArray && type == enums.FLOAT.value) {
-    return function(v) {
+    return function (v) {
       gl.uniform1fv(uniformLocation, v);
     };
   }
-  return function createSetter(v) {
+  return function createSetter (v) {
     return enums[getKeyFromType(type)].setter(uniformLocation, v);
   };
 }
 
-function buffer2Attribute(object) {
+function buffer2Attribute (object) {
   let map = {};
-  Object.keys(object).forEach(function(name) {
+  Object.keys(object).forEach(function (name) {
     if (name == 'indices') {
       return;
     }
@@ -405,7 +405,7 @@ function buffer2Attribute(object) {
   });
   return map;
 }
-function getNumsPerElementByName(name) {
+function getNumsPerElementByName (name) {
   switch (name) {
     case 'colors':
       return 4;
@@ -419,7 +419,7 @@ function getNumsPerElementByName(name) {
       return 4;
   }
 }
-function getTypeByName(name) {
+function getTypeByName (name) {
   if (name == 'colors') {
     return Uint8Array;
   }
@@ -431,7 +431,7 @@ function getTypeByName(name) {
   }
   return Float32Array;
 }
-function makeTypedArray(data, name) {
+function makeTypedArray (data, name) {
   if (!data.numsPerElement) {
     data.numsPerElement = getNumsPerElementByName(name, data.length);
   }
@@ -444,20 +444,20 @@ function makeTypedArray(data, name) {
 
   typedArray.numsPerElement = data.numsPerElement;
   Object.defineProperty(typedArray, 'elementsCount', {
-    get: function() {
+    get: function () {
       return this.length / this.numsPerElement;
     }
   });
   return typedArray;
 }
-function createWebGLBuffer(gl, typedArray, bufferType, drawType) {
+function createWebGLBuffer (gl, typedArray, bufferType, drawType) {
   let buffer = gl.createBuffer();
   bufferType = bufferType || gl.ARRAY_BUFFER;
   gl.bindBuffer(bufferType, buffer);
   gl.bufferData(bufferType, typedArray, drawType || gl.STATIC_DRAW);
   return buffer;
 }
-function getWebGLTypeByTypedArrayType(gl, array) {
+function getWebGLTypeByTypedArrayType (gl, array) {
   switch (array.constructor) {
     case Int8Array:
       return gl.BYTE;
@@ -475,16 +475,16 @@ function getWebGLTypeByTypedArrayType(gl, array) {
       return gl.FLOAT;
   }
 }
-function getNormalize(array) {
+function getNormalize (array) {
   if (array instanceof Uint8Array || array instanceof Int8Array) {
     return true;
   }
   return false;
 }
-function makeAttributesInBufferInfo(gl, object) {
+function makeAttributesInBufferInfo (gl, object) {
   let mapping = buffer2Attribute(object);
   let attributeObject = {};
-  Object.keys(mapping).forEach(function(attributeName) {
+  Object.keys(mapping).forEach(function (attributeName) {
     let bufferName = mapping[attributeName];
     let array = makeTypedArray(object[bufferName], bufferName);
     attributeObject[attributeName] = {
@@ -497,7 +497,7 @@ function makeAttributesInBufferInfo(gl, object) {
   });
   return attributeObject;
 }
-function createBufferInfoFromObject(gl, object) {
+function createBufferInfoFromObject (gl, object) {
   let bufferInfo = {};
   bufferInfo.attributes = makeAttributesInBufferInfo(gl, object);
   let indices = object.indices;
@@ -516,7 +516,7 @@ function createBufferInfoFromObject(gl, object) {
   return bufferInfo;
 }
 
-function setElementsCountPerAttribute(object) {
+function setElementsCountPerAttribute (object) {
   let key = Object.keys(object)[0];
   let array = object[key];
   if (array && array.buffer instanceof ArrayBuffer) {
@@ -525,7 +525,7 @@ function setElementsCountPerAttribute(object) {
     return array.length / array.numsPerElement;
   }
 }
-function setBufferInfos(gl, setters, buffers) {
+function setBufferInfos (gl, setters, buffers) {
   if (!buffers.attributes) {
     return;
   }
@@ -535,9 +535,9 @@ function setBufferInfos(gl, setters, buffers) {
   }
 }
 
-function setAttributes(setters, attributes) {
+function setAttributes (setters, attributes) {
   setters = setters.attributeSetters || setters;
-  Object.keys(attributes).forEach(function(name) {
+  Object.keys(attributes).forEach(function (name) {
     let setter = setters[name];
     if (setter) {
       setter(attributes[name]);
@@ -545,9 +545,9 @@ function setAttributes(setters, attributes) {
   });
 }
 
-function setUniforms(setters, values) {
+function setUniforms (setters, values) {
   setters = setters.uniformSetters || setters;
-  Object.keys(values).forEach(function(name) {
+  Object.keys(values).forEach(function (name) {
     let setter = setters[name];
     if (setter) {
       setter(values[name]);
@@ -556,25 +556,25 @@ function setUniforms(setters, values) {
 }
 
 // 列表类
-function List(list) {
+function List (list) {
   this.list = list || [];
   this.uuid = this.list.length;
 }
 // 添加对象
-List.prototype.add = function(object) {
+List.prototype.add = function (object) {
   object.uuid = this.uuid;
   this.list.push(object);
   this.uuid++;
 };
 // 删除对象
-List.prototype.remove = function(object) {
+List.prototype.remove = function (object) {
   this.list.splice(object.uuid, 1);
 };
 // 删除对象
-List.prototype.get = function(index) {
+List.prototype.get = function (index) {
   return this.list[index];
 };
 // 添加对象
-List.prototype.forEach = function(fun) {
+List.prototype.forEach = function (fun) {
   this.list.forEach(fun);
 };

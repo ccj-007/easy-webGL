@@ -1,0 +1,64 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 debug pnpm:package-manifest": {
+    "initial": {
+      "name": "easy-webgl",
+      "version": "1.0.0",
+      "description": "easy-webGL",
+      "main": "index.js",
+      "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+      },
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ccj-007/easy-webGL.git"
+      },
+      "keywords": [],
+      "author": "chase chen <596487930@qq.com> (https://github.com/ccj-007)",
+      "license": "MIT",
+      "bugs": {
+        "url": "https://github.com/ccj-007/easy-webGL/issues"
+      },
+      "homepage": "https://github.com/ccj-007/easy-webGL#readme"
+    },
+    "prefix": "E:\\originCode-study\\easy-webGL"
+  },
+  "2 debug pnpm:context": {
+    "currentLockfileExists": false,
+    "storeDir": "E:\\.pnpm-store\\v3",
+    "virtualStoreDir": "E:\\originCode-study\\easy-webGL\\node_modules\\.pnpm"
+  },
+  "3 debug pnpm:stage": {
+    "prefix": "E:\\originCode-study\\easy-webGL",
+    "stage": "resolution_started"
+  },
+  "4 debug pnpm:update-check": {
+    "currentVersion": "7.4.1",
+    "latestVersion": "7.29.3"
+  },
+  "5 error pnpm": {
+    "code": "ERR_PNPM_FETCH_404",
+    "hint": "Chokidar is not in the npm registry, or you have no permission to fetch it.\n\nNo authorization header was set for the request.",
+    "request": {
+      "url": "https://registry.npmmirror.com/Chokidar"
+    },
+    "response": {
+      "size": 0
+    },
+    "pkgName": "Chokidar",
+    "spec": {
+      "fetchSpec": "latest",
+      "name": "Chokidar",
+      "type": "tag"
+    },
+    "pkgsStack": [],
+    "err": {
+      "name": "pnpm",
+      "message": "GET https://registry.npmmirror.com/Chokidar: Not Found - 404",
+      "code": "ERR_PNPM_FETCH_404",
+      "stack": "pnpm: GET https://registry.npmmirror.com/Chokidar: Not Found - 404\n    at RetryOperation._fn (D:\\nvm\\v16.15.0\\node_modules\\pnpm\\dist\\pnpm.cjs:85618:19)\n    at processTicksAndRejections (node:internal/process/task_queues:96:5)"
+    }
+  }
+}

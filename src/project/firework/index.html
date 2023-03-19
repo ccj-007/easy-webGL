@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script src="../../utils/index.js"></script>
+  <script src="./tran/dist/fragment.js"></script>
+  <script src="./tran/dist/vertex.js"></script>
+  <canvas id="canvas" width="600" height="600">
+    不支持canvas
+  </canvas>
+  <script>
+    const canvas = document.getElementById('canvas')
+    const gl = canvas.getContext('webgl')
+    let program = initShader(gl, vertexShader, fragmentShader)
+    gl.useProgram(program)
+
+    // 获取属性
+    const a_Position = gl.getAttribLocation(program, 'a_Position')
+    const a_Color = gl.getAttribLocation(program, 'a_Color')
+    const a_Scale = gl.getAttribLocation(program, 'a_Scale')
+    const mat = gl.getUniformLocation(program, 'mat')
+
+    // 定义方体的六个顶点
+    const vertices = new Float32Array([
+      1, 1, 1,
+      -1, 1, 1,
+      -1, -1, 1,
+      1, -1, 1,
+      1, -1, -1,
+      1, 1, -1,
+      -1, 1, -1,
+      -1, -1, -1,
+    ])
+    const buffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0)
+    gl.enableVertexAttribArray(a_Position)
+
+    // 定义各个坐标的颜色
+    const colors = new Float32Array([
+      0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0,
+      0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4,
+      1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4,
+      1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4,
+      1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+      0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+    ])
+
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_Color)
+
+    const indeces = new Uint8Array([
+      0, 1, 2, 0, 2, 3,
+      0, 3, 4, 0, 4, 5,
+      0, 5, 6, 0, 6, 1,
+      1, 6, 7, 1, 7, 2,
+      7, 4, 3, 7, 3, 2,
+      4, 6, 7, 4, 6, 5,
+    ])
+    const indexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indeces, gl.STATIC_DRAW)
+
+    let eyex = 3
+    let eyey = 3
+    let eyez = 5
+
+    let deg = 0
+    let offsetX = -1
+
+    function draw() {
+      offsetX += 0.01;
+      if (offsetX > 50) {
+        offsetX = -1;
+      }
+
+      gl.clearColor(0.9, 0.9, 0.9, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      deg += 0.01
+      const rotate = getRotateMatrix(deg)
+      const translate = getTranslateMatrix(offsetX)
+      const changedAnimate = mixMatrix(rotate, translate)
+
+      // const vm = getViewMatrix(eyex, eyey, eyez, 0.0, 0.0, 0.0, 0.0, 0.6, 0.0)
+      // const perspective = getPerspective(100, canvas.width / canvas.height, 100, 1)
+      gl.enable(gl.DEPTH_TEST)
+      // const transRes = mixMatrix(mixMatrix(perspective, vm), translate)
+      gl.uniformMatrix4fv(mat, false, translate)
+      gl.drawElements(gl.TRIANGLES, indeces.length, gl.UNSIGNED_BYTE, 0)
+      requestAnimationFrame(draw)
+    }
+    draw()
+  </script>
+</body>
+
+</html>
