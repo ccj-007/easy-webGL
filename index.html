@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.3.4/axios.js"></script>
+  <script>
+    let url = "https://api.openai.com/v1/completions";
+    let answer = axios.post(url, '你好').then((res) => {
+      let result = res
+      console.log(result);
+    }).catch((err) => {
+      return "error";
+    });
+  </script>
+</body>
+
+</html>
