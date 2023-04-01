@@ -8,13 +8,10 @@
 # 缓冲的过程
 
 let bufferOrigin = gl.createBuffer()
-gl.bindBuffer(gl.ARRAY_BUFFER, bufferOrigin)
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-
-## 缓存数组的传递
+gl.bindBuffer(gl.ARRAY_BUFFER, bufferOrigin);
 
 gl.enableVertexAttribArray(positionAttributeLocation);  // 告诉缓冲区怎么加载
-gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
 
 # 获取数据

@@ -22,6 +22,7 @@ uniform vec2 u_resolution;
 attribute vec4 a_composeColor;
 varying vec4 v_composeColor;
 varying vec2 v_texCoord;
+attribute float u_flipY;
 
 void main() {
    // 屏幕坐标 -> 裁剪坐标
@@ -30,7 +31,7 @@ void main() {
 
    vec2 clipSpace = zeroToTwo - 1.0;
 
-   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+   gl_Position = vec4(clipSpace * vec2(1, u_flipY), 0, 1);
    v_composeColor = a_composeColor;
    v_texCoord = a_texCoord;
 }
@@ -66,15 +67,15 @@ void main() {
 <script>
   "use strict";
 
-  function main() {
+  function main () {
     const image = new Image();
     image.src = "resources/peo.png";
-    image.onload = function() {
+    image.onload = function () {
       render(image);
     };
   }
 
-  function render(image) {
+  function render (image) {
     const canvas = document.querySelector("#canvas");
     image.width = 540
     image.height = 720
@@ -95,6 +96,18 @@ void main() {
     // 缓冲区绘制纹理
     const texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
 
+    // 处理坐标转换
+    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    const textureSizeLocation = gl.getUniformLocation(program, "u_textureSize");
+
+    const composeColorLocation = gl.getAttribLocation(program, "a_composeColor");
+
+    // 处理卷积
+    const kernelLocation = gl.getUniformLocation(program, "u_kernel[0]");
+    const kernelWeightLocation = gl.getUniformLocation(program, "u_kernelWeight");
+
+    const flipYLocation = gl.getAttribLocation(program, "u_flipY");
+
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
@@ -111,28 +124,72 @@ void main() {
     ]), gl.STATIC_DRAW);
 
     // webgl创建纹理，并设置基本纹理参数，载入image图片
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    function createAndSetupTexture (gl) {
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      return texture
+    }
+    const originTexture = createAndSetupTexture(gl)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-    // 处理坐标转换
-    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
-    const textureSizeLocation = gl.getUniformLocation(program, "u_textureSize");
+    // 绘制帧缓冲
+    function drawFrames () {
+      const originTexture = createAndSetupTexture(gl)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      // 创建两个纹理绑定到帧缓冲
+      let textures = []
+      let frameBuffers = []
+      const kernelsFilterList = ['gaussianBlur', 'emboss', 'boxBlur', 'gaussianBlur', 'boxBlur', 'gaussianBlur', 'boxBlur', 'gaussianBlur'] //叠加效果的数组
 
-    const composeColorLocation = gl.getAttribLocation(program, "a_composeColor");
+      for (let i = 0; i < kernelsFilterList.length; i++) {
+        let texture = createAndSetupTexture(gl)
+        textures.push(texture)
 
-    // 处理卷积
-    const kernelLocation = gl.getUniformLocation(program, "u_kernel[0]");
-    const kernelWeightLocation = gl.getUniformLocation(program, "u_kernelWeight");
+        gl.texImage2D(
+          gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0,
+          gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+        var fBuffer = gl.createFramebuffer()
+        frameBuffers.push(fBuffer)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fBuffer);
+        // 绑定纹理到帧缓冲
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      }
+      gl.bindTexture(gl.TEXTURE_2D, originTexture);
+
+      for (var i = 0; i < kernelsFilterList.length; i++) {
+        setFramebuffer(frameBuffers[i], image.width, image.height);
+        drawWithKernel(kernelsFilterList[i]);
+        // 叠加
+        gl.bindTexture(gl.TEXTURE_2D, textures[i]);
+      }
+
+      // 绘制
+      setFramebuffer(null, canvas.width, canvas.height);
+      drawWithKernel("normal");
+
+      function setFramebuffer (fbo, width, height) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.uniform2f(resolutionLocation, width, height);
+        gl.viewport(0, 0, width, height);
+      }
+    }
 
     // 3 * 3的卷积的矩阵
-    const kernelsFilter = {
+    var kernelsFilter = {
+      normal: {
+        name: '正常',
+        data: [
+          0, 0, 0,
+          0, 1, 0,
+          0, 0, 0
+        ],
+      },
       sharpness: {
         name: '锐度',
         data: [
@@ -207,63 +264,17 @@ void main() {
       },
     }
 
-    const initialSelectionColor = 'light';
-
-    const ui2 = document.querySelector("#ui");
-    const select2 = document.createElement("select");
-    for (const k in composeFilter) {
-      const item = composeFilter[k]
-      const option = document.createElement("option");
-      option.value = k
-      if (item.name === 'light') {
-        option.selected = true
-      }
-      option.appendChild(document.createTextNode(item.name));
-      select2.appendChild(option);
-    }
-
-    select2.onchange = function(event) {
-      const name = event.target.value
-      const data = composeFilter[name].data
-      gl.vertexAttrib4fv(composeColorLocation, data)
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    };
-    ui2.appendChild(select2);
-    gl.vertexAttrib4fv(composeColorLocation, new Float32Array([1, 1, 1, 1]))
-
-    // 初始化的配置滤镜，dom的一些操作
-    const initialSelection = 'sharpness';
-
-    const ui = document.querySelector("#ui");
-    const select = document.createElement("select");
-    for (const k in kernelsFilter) {
-      const item = kernelsFilter[k]
-      const option = document.createElement("option");
-      option.value = k;
-      if (item.name === initialSelection) {
-        option.selected = true;
-      }
-      option.appendChild(document.createTextNode(item.name));
-      select.appendChild(option);
-    }
-
-    select.onchange = function(event) {
-      drawWithKernel(this.options[this.selectedIndex].value);
-    };
-    ui.appendChild(select);
-    drawWithKernel(initialSelection);
 
     // 将周围八个点相加用于平均数相除
-    function computeKernelWeight(kernel) {
-      const weight = kernel.reduce(function(prev, curr) {
+    function computeKernelWeight (kernel) {
+      const weight = kernel.reduce(function (prev, curr) {
         return prev + curr;
       });
       return weight <= 0 ? 1 : weight;
     }
 
-    function drawWithKernel(name) {
+    function drawWithKernel (name) {
       webglUtils.resizeCanvasToDisplaySize(gl.canvas);
-
       // 设置裁剪空间的视口尺寸，设置默认颜色
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       gl.clearColor(0, 0, 0, 0);
@@ -274,6 +285,7 @@ void main() {
       gl.enableVertexAttribArray(positionLocation);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.vertexAttrib1f(flipYLocation, -1); // 需要绕y轴翻转
 
       const size = 2; // 绘制的数量
       const type = gl.FLOAT; // 32位精度
@@ -306,9 +318,64 @@ void main() {
       const count = 6;
       gl.drawArrays(primitiveType, offset, count);
     }
+
+    const initialSelectionColor = 'light';
+
+    const ui2 = document.querySelector("#ui");
+    const select2 = document.createElement("select");
+    for (const k in composeFilter) {
+      const item = composeFilter[k]
+      const option = document.createElement("option");
+      option.value = k
+      if (item.name === 'light') {
+        option.selected = true
+      }
+      option.appendChild(document.createTextNode(item.name));
+      select2.appendChild(option);
+    }
+
+    select2.onchange = function (event) {
+      const name = event.target.value
+      const data = composeFilter[name].data
+      gl.vertexAttrib4fv(composeColorLocation, data)
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+    ui2.appendChild(select2);
+    gl.vertexAttrib4fv(composeColorLocation, new Float32Array([1, 1, 1, 1]))
+
+    // 初始化的配置滤镜，dom的一些操作
+    const initialSelection = 'sharpness';
+
+    const ui = document.querySelector("#ui");
+    const select = document.createElement("select");
+    for (const k in kernelsFilter) {
+      const item = kernelsFilter[k]
+      const option = document.createElement("option");
+      option.value = k;
+      if (item.name === initialSelection) {
+        option.selected = true;
+      }
+      option.appendChild(document.createTextNode(item.name));
+      select.appendChild(option);
+    }
+
+    select.onchange = function (event) {
+      drawWithKernel(this.options[this.selectedIndex].value);
+    };
+    ui.appendChild(select);
+    drawWithKernel(initialSelection);
+
+    const btn = document.createElement('button')
+    btn.innerHTML = '叠加浮雕 + 高斯模糊'
+    btn.className = 'fixed'
+    console.log('btn', btn)
+    btn.addEventListener('click', () => {
+      drawFrames()
+    })
+    ui.appendChild(btn)
   }
 
-  function setRectangle(gl, x, y, width, height) {
+  function setRectangle (gl, x, y, width, height) {
     const x1 = x;
     const x2 = x + width;
     const y1 = y;

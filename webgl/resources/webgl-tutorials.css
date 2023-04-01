@@ -28,7 +28,7 @@ canvas {
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 3;
+  z-index: 30000;
   font-family: monospace;
   pointer-events: none;
 
@@ -50,6 +50,7 @@ canvas {
 #ui input,
 #ui label,
 #ui select,
+#ui button,
 #ui option,
 #ui canvas {
   pointer-events: auto;
