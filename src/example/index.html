@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script src="../../utils/index.js"></script>
+  <script src="./tran/dist/fragment.js"></script>
+  <script src="./tran/dist/vertex.js"></script>
+  <canvas id="canvas">
+    不支持canvas
+  </canvas>
+  <script>
+    const canvas = document.getElementById('canvas')
+    const gl = canvas.getContext('webgl')
+
+    let program = initShader(gl, vertexShader, fragmentShader)
+
+    gl.useProgram(program)
+
+    let a_Screen_Size = gl.getAttribLocation(program, 'a_Screen_Size');
+    gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+
+    let positions = [];
+
+    let a_Position = gl.getAttribLocation(program, 'a_Position');
+    let a_Color = gl.getAttribLocation(program, 'a_Color');
+    gl.enableVertexAttribArray(a_Position);
+    gl.enableVertexAttribArray(a_Color);
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(a_Color, 4, gl.FLOAT, false, 24, 8);
+
+    //设置清屏颜色为黑色。
+    gl.clearColor(0, 0, 0, 1);
+
+    canvas.addEventListener("click", e => {
+      positions.push(e.pageX, e.pageY);
+      let color = randomColor();
+      positions.push(color.r, color.g, color.b, color.a);
+      // 顶点信息为 18 的整数倍即3个顶点时执行绘制操作，因为三角形由三个顶点组成，每个顶点由六个元素组成。
+      if (positions.length % 18 == 0) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+        render(gl);
+      }
+    })
+
+    function render(gl) {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      let primitiveType = gl.TRIANGLES;
+      if (positions.length > 0) {
+        gl.drawArrays(primitiveType, 0, positions.length / 6);
+      }
+    }
+    render(gl);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "easy-webgl",
+  "version": "1.0.0",
+  "description": "easy-webGL",
+  "main": "index.js",
+  "scripts": {
+    "glsl" :  "nodemon src/project/firework/node.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ccj-007/easy-webGL.git"
+  },
+  "keywords": [],
+  "author": "chase chen <596487930@qq.com> (https://github.com/ccj-007)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ccj-007/easy-webGL/issues"
+  },
+  "homepage": "https://github.com/ccj-007/easy-webGL#readme",
+  "dependencies": {
+    "nodemon": "^2.0.21"
+  }
+}

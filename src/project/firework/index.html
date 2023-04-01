@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script src="../../utils/index.js"></script>
+  <script src="./tran/dist/fragment.js"></script>
+  <script src="./tran/dist/vertex.js"></script>
+  <canvas id="canvas" width="600" height="600">
+    不支持canvas
+  </canvas>
+  <script>
+    const canvas = document.getElementById('canvas')
+    const gl = canvas.getContext('webgl')
+    let program = initShader(gl, vertexShader, fragmentShader)
+    gl.useProgram(program)
+
+    // 获取属性
+    const a_Position = gl.getAttribLocation(program, 'a_Position')
+    const a_Color = gl.getAttribLocation(program, 'a_Color')
+    const a_Scale = gl.getAttribLocation(program, 'a_Scale')
+    const mat = gl.getUniformLocation(program, 'mat')
+
+    gl.vertexAttrib2f(a_Scale, 0.1, 0.1, 0.1, 1.0)
+    // 定义方体的六个顶点
+    let v_all = []
+    let nums = 1
+    let v_ins = []
+    let start = 0
+
+    function getSquare() {
+      let size = +Math.random().toFixed(2)
+      console.log(size);
+      let data = [
+        size, size, size,
+        -size, size, size,
+        -size, -size, size,
+        size, -size, size,
+        size, -size, -size,
+        size, size, -size,
+        -size, size, -size,
+        -size, -size, -size,
+      ]
+      let ins = ([
+        start + 0, start + 1, start + 2, start + 0, start + 2, start + 3,
+        start + 0, start + 3, start + 4, start + 0, start + 4, start + 5,
+        start + 0, start + 5, start + 6, start + 0, start + 6, start + 1,
+        start + 1, start + 6, start + 7, start + 1, start + 7, start + 2,
+        start + 7, start + 4, start + 3, start + 7, start + 3, start + 2,
+        start + 4, start + 6, start + 7, start + 4, start + 6, start + 5,
+      ])
+      v_all.push(...data)
+      v_ins.push(...ins)
+      start += 8
+    }
+    for (let i = 0; i < nums; i++) {
+      getSquare()
+    }
+    const vertices = new Float32Array(v_all)
+    const indeces = new Uint32Array(v_ins)
+
+    const buffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0)
+    gl.enableVertexAttribArray(a_Position)
+
+    // 定义各个坐标的颜色
+    const colors = new Float32Array([
+      0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0,
+      0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4,
+      1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4,
+      1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4,
+      1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+      0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+    ])
+
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_Color)
+
+
+    const indexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indeces, gl.STATIC_DRAW)
+
+    let eyex = 3
+    let eyey = 3
+    let eyez = 5
+
+    let deg = 0
+    let offsetX = -1
+
+    function draw() {
+      offsetX += 0.01;
+      if (offsetX > 50) {
+        offsetX = -1;
+      }
+
+      gl.clearColor(0.9, 0.9, 0.9, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      deg += 0.01
+      const rotate = getRotateMatrix(deg)
+      const translate = getTranslateMatrix(offsetX)
+      const changedAnimate = mixMatrix(rotate, translate)
+      // const vm = getViewMatrix(eyex, eyey, eyez, 0.0, 0.0, 0.0, 0.0, 0.6, 0.0)
+      // const perspective = getPerspective(100, canvas.width / canvas.height, 100, 1)  
+      gl.enable(gl.DEPTH_TEST)
+      // const transRes = mixMatrix(mixMatrix(perspective, vm), translate)
+      gl.uniformMatrix4fv(mat, false, translate)
+      // gl.uniformMatrix4fv(mat, false, rotate)
+      gl.drawElements(gl.TRIANGLES, indeces.length, gl.UNSIGNED_BYTE, 0)
+      requestAnimationFrame(draw)
+    }
+    draw()
+  </script>
+</body>
+
+</html>
