@@ -44,6 +44,7 @@
   'use strict';
   const gopt = getQueryParams();
 
+
   function setupSlider (selector, options) {
     var parent = document.querySelector(selector);
     if (!parent) {
