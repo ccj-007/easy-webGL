@@ -38,7 +38,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
   // This is not a full .obj parser.
   // see http://paulbourke.net/dataformats/obj/
 
-  function parseOBJ(text) {
+  function parseOBJ (text) {
     // because indices are base 1 let's just fill in the 0th data
     const objPositions = [
       [0, 0, 0]
@@ -76,9 +76,9 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
     let material = 'default';
     let object = 'default';
 
-    const noop = () => {};
+    const noop = () => { };
 
-    function newGeometry() {
+    function newGeometry () {
       // If there is an existing geometry and it's
       // not empty then start a new one.
       if (geometry && geometry.data.position.length) {
@@ -86,7 +86,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
       }
     }
 
-    function setGeometry() {
+    function setGeometry () {
       if (!geometry) {
         const position = [];
         const texcoord = [];
@@ -113,7 +113,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
       }
     }
 
-    function addVertex(vert) {
+    function addVertex (vert) {
       const ptn = vert.split('/');
       ptn.forEach((objIndexStr, i) => {
         if (!objIndexStr) {
@@ -131,7 +131,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
     }
 
     const keywords = {
-      v(parts) {
+      v (parts) {
         // if there are more than 3 values here they are vertex colors
         if (parts.length > 3) {
           objPositions.push(parts.slice(0, 3).map(parseFloat));
@@ -140,14 +140,14 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
           objPositions.push(parts.map(parseFloat));
         }
       },
-      vn(parts) {
+      vn (parts) {
         objNormals.push(parts.map(parseFloat));
       },
-      vt(parts) {
+      vt (parts) {
         // should check for missing v and extra w?
         objTexcoords.push(parts.map(parseFloat));
       },
-      f(parts) {
+      f (parts) {
         setGeometry();
         const numTriangles = parts.length - 2;
         for (let tri = 0; tri < numTriangles; ++tri) {
@@ -157,20 +157,20 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
         }
       },
       s: noop, // smoothing group
-      mtllib(parts, unparsedArgs) {
+      mtllib (parts, unparsedArgs) {
         // the spec says there can be multiple filenames here
         // but many exist with spaces in a single filename
         materialLibs.push(unparsedArgs);
       },
-      usemtl(parts, unparsedArgs) {
+      usemtl (parts, unparsedArgs) {
         material = unparsedArgs;
         newGeometry();
       },
-      g(parts) {
+      g (parts) {
         groups = parts;
         newGeometry();
       },
-      o(parts, unparsedArgs) {
+      o (parts, unparsedArgs) {
         object = unparsedArgs;
         newGeometry();
       },
@@ -209,52 +209,52 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
     };
   }
 
-  function parseMapArgs(unparsedArgs) {
+  function parseMapArgs (unparsedArgs) {
     // TODO: handle options
     return unparsedArgs;
   }
 
-  function parseMTL(text) {
+  function parseMTL (text) {
     const materials = {};
     let material;
 
     const keywords = {
-      newmtl(parts, unparsedArgs) {
+      newmtl (parts, unparsedArgs) {
         material = {};
         materials[unparsedArgs] = material;
       },
       /* eslint brace-style:0 */
-      Ns(parts) {
+      Ns (parts) {
         material.shininess = parseFloat(parts[0]);
       },
-      Ka(parts) {
+      Ka (parts) {
         material.ambient = parts.map(parseFloat);
       },
-      Kd(parts) {
+      Kd (parts) {
         material.diffuse = parts.map(parseFloat);
       },
-      Ks(parts) {
+      Ks (parts) {
         material.specular = parts.map(parseFloat);
       },
-      Ke(parts) {
+      Ke (parts) {
         material.emissive = parts.map(parseFloat);
       },
-      map_Kd(parts, unparsedArgs) {
+      map_Kd (parts, unparsedArgs) {
         material.diffuseMap = parseMapArgs(unparsedArgs);
       },
-      map_Ns(parts, unparsedArgs) {
+      map_Ns (parts, unparsedArgs) {
         material.specularMap = parseMapArgs(unparsedArgs);
       },
-      map_Bump(parts, unparsedArgs) {
+      map_Bump (parts, unparsedArgs) {
         material.normalMap = parseMapArgs(unparsedArgs);
       },
-      Ni(parts) {
+      Ni (parts) {
         material.opticalDensity = parseFloat(parts[0]);
       },
-      d(parts) {
+      d (parts) {
         material.opacity = parseFloat(parts[0]);
       },
-      illum(parts) {
+      illum (parts) {
         material.illum = parseInt(parts[0]);
       },
     };
@@ -283,11 +283,11 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
     return materials;
   }
 
-  function isPowerOf2(value) {
+  function isPowerOf2 (value) {
     return (value & (value - 1)) === 0;
   }
 
-  function create1PixelTexture(gl, pixel) {
+  function create1PixelTexture (gl, pixel) {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
@@ -295,12 +295,12 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
     return texture;
   }
 
-  function createTexture(gl, url) {
+  function createTexture (gl, url) {
     const texture = create1PixelTexture(gl, [128, 192, 255, 255]);
     // Asynchronously load an image
     const image = new Image();
     image.src = url;
-    image.addEventListener('load', function() {
+    image.addEventListener('load', function () {
       // Now that the image has loaded make copy it to the texture.
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -321,7 +321,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
   }
 
 
-  async function main() {
+  async function main () {
     // Get A WebGL context
     /** @type {HTMLCanvasElement} */
     const canvas = document.querySelector("#canvas");
@@ -483,7 +483,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
       };
     });
 
-    function getExtents(positions) {
+    function getExtents (positions) {
       const min = positions.slice(0, 3);
       const max = positions.slice(0, 3);
       for (let i = 3; i < positions.length; i += 3) {
@@ -499,7 +499,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
       };
     }
 
-    function getGeometriesExtents(geometries) {
+    function getGeometriesExtents (geometries) {
       return geometries.reduce(({
         min,
         max
@@ -539,11 +539,11 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
     const zNear = radius / 100;
     const zFar = radius * 3;
 
-    function degToRad(deg) {
+    function degToRad (deg) {
       return deg * Math.PI / 180;
     }
 
-    function render(time) {
+    function render (time) {
       time *= 0.0005; // convert to seconds
 
       webglUtils.resizeCanvasToDisplaySize(gl.canvas);
@@ -579,9 +579,9 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
       u_world = m4.translate(u_world, ...objOffset);
 
       for (const {
-          bufferInfo,
-          material
-        } of parts) {
+        bufferInfo,
+        material
+      } of parts) {
         // calls gl.bindBuffer, gl.enableVertexAttribArray, gl.vertexAttribPointer
         webglUtils.setBuffersAndAttributes(gl, meshProgramInfo, bufferInfo);
         // calls gl.uniform

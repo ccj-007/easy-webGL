@@ -823,7 +823,6 @@
     });
     return typedArray;
   }
-
   /**
    * creates a typed array with a `push` function attached
    * so that you can easily *push* values.
