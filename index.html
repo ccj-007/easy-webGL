@@ -9,15 +9,33 @@
 </head>
 
 <body>
-  <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.3.4/axios.js"></script>
+  <canvas id="canvas"></canvas>
+
   <script>
-    let url = "https://api.openai.com/v1/completions";
-    let answer = axios.post(url, '你好').then((res) => {
-      let result = res
-      console.log(result);
-    }).catch((err) => {
-      return "error";
-    });
+    function drawText () {
+      // 获取canvas标签
+      var canvas = document.getElementById('canvas')
+      // 获取canvas上下文对象，可理解为：使用画布的权限
+      var context = canvas.getContext('2d')
+      // 获取画布宽高
+      var w = context.canvas.width;
+      var h = context.canvas.height;
+      // 设置字体相关样式
+      context.font = '40px 宋体'
+      // 样色
+      context.fillStyle = 'red'
+      // 画文字
+      context.fillText('贰拾壹先生', w / 2, w / 2)
+      context.strokeStyle = 'blue'
+      // 绘制空心文字
+      context.strokeText('你好', 100, 250)
+
+      // 设置最大宽度
+      context.fillStyle = 'gold'
+      context.fillText("最大宽度,不管内容多少，左右都100px", 100, 100, 300)
+
+    }
+    drawText()
   </script>
 </body>
 

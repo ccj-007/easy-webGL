@@ -1,0 +1,18 @@
+/* Licensed under a BSD license. See ../license.html for license */
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+  user-select: none;
+}
+
+body {
+  background-color: #fff;
+  font-family: Sans-Serif;
+  padding: 0;
+  margin: 0;
+}
