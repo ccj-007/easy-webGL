@@ -2,7 +2,7 @@
  * @Author: chen 596487930@qq.com
  * @Date: 2023-04-03 23:38:41
  * @LastEditors: chen 596487930@qq.com
- * @LastEditTime: 2023-04-05 20:51:11
+ * @LastEditTime: 2023-04-06 22:57:41
  * @FilePath: \easy-webGL\webgl\webgl-multiple-objects-huan.html
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -44,26 +44,17 @@ attribute vec4 a_position;
 attribute vec4 a_color;
 uniform mat4 u_matrix;
 varying vec4 v_color;
-attribute vec3 a_normal;
-varying vec3 v_normal;
 void main() {
   gl_Position = u_matrix * a_position;
   v_color = a_color;
-  v_normal = a_normal;
 }
 </script>
 <script id="fragment-shader-3d" type="x-shader/x-fragment">
 precision mediump float;
 varying vec4 v_color;
 uniform vec4 u_colorMult;
-uniform vec3 u_reverseLightDirection;
-varying vec3 v_normal;
 void main() {
-   vec3 normal = normalize(v_normal);
-   float light = dot(normal, u_reverseLightDirection);
     gl_FragColor = v_color * u_colorMult;
-    // gl_FragColor = v_color;
-    // gl_FragColor.rgb *= light;
 }
 </script>
 <script>
@@ -72,6 +63,7 @@ void main() {
   var program
   var textPointList = []
   var planes = []
+  var planesCompNum = 0
   function makeRandomVertexColors (vertices, options) {
     options = options || {};
     const numElements = vertices.position.numElements;
@@ -219,11 +211,10 @@ void main() {
 
     return vertices;
   }
-  function createFlattenedFunc (vertFunc) {
+  function createFlattenedFunc (vertFunc, colorVal) {
     return function (gl, ...args) {
       // 返回包含索引、顶点、法线、纹理
       let vertices = vertFunc(...args);
-      // vertices = flattenNormals(vertices)
       // 得到索引转换的集合
       vertices = deindexVertices(vertices);
 
@@ -231,7 +222,7 @@ void main() {
       vertices = makeRandomVertexColors(vertices, {
         vertsPerColor: 3,
         rand: function (ndx, channel) {
-          return channel < 3 ? ((128 + Math.random() * 128) | 0) : 255;
+          return colorVal;
         },
       });
       const res = webglUtils.createBufferInfoFromArrays(gl, vertices);
@@ -254,17 +245,23 @@ void main() {
     const texCoords = webglUtils.createAugmentedTypedArray(2, numVertices);
     const indices = webglUtils.createAugmentedTypedArray(3, xGrids * 2, Uint16Array); //索引数
 
-    let bottomList = []
+    let ringTextList = []
+    let mid = xGrids >> 1
+
     for (let i = 0; i <= xGrids; i++) {
       let angle = (endPI - startPI) * (i / xGrids) + startPI;
+      if (mid === i && y > 1) {
+        let midRadians = innerRadians + (outerRadians - innerRadians) / 2
+        textPointList.push([midRadians * Math.sin(angle), y, midRadians * Math.cos(angle), 1])
+      }
       // 内环
-      bottomList.push(
+      positions.push(
         innerRadians * Math.sin(angle),
         y,
         innerRadians * Math.cos(angle),
       );
       // 外环
-      bottomList.push(
+      positions.push(
         outerRadians * Math.sin(angle),
         y,
         outerRadians * Math.cos(angle),
@@ -273,27 +270,16 @@ void main() {
       texCoords.push(1, 1)
     }
 
-    let ids = []
-    function getIds () {
-      for (let i = 0; i < xGrids; i++) {
-        let p0 = i * 2; // 0
-        let p1 = i * 2 + 1; // 1
-        let p2 = (i + 1) * 2 + 1; // 3
-        let p3 = (i + 1) * 2; // 2
-        if (i == xGrids) {
-          p2 = 1;
-          p3 = 0;
-        }
-        ids.push(p0, p1, p2, p2, p3, p0)
+    for (let i = 0; i < xGrids; i++) {
+      let p0 = i * 2; // 0
+      let p1 = i * 2 + 1; // 1
+      let p2 = (i + 1) * 2 + 1; // 3
+      let p3 = (i + 1) * 2; // 2
+      if (i == xGrids) {
+        p2 = 1;
+        p3 = 0;
       }
-    }
-    getIds(0)
-
-    positions.push(...bottomList)
-    indices.push(...ids);
-    if (y > 1) {
-      const pos = [bottomList.at(-1), bottomList.at(-2), bottomList.at(-3), 1]
-      textPointList.push(pos)
+      indices.push(p0, p1, p2, p2, p3, p0)
     }
 
     return {
@@ -420,9 +406,9 @@ void main() {
 
     function getObjectsToDrawObj (opt = { ir: 80, or: 100, w: 20, spi: Math.PI, epi: Math.PI * 2, h: 40, color: [0.5, 1, 0.5, 1] }) {
       const { ir, or, w, spi, epi, h, color } = opt
-      const createRingWithVertexColorsBufferInfo = createFlattenedFunc(createSphereVertices)
-      const createRingWithVertexColorsBufferInfoRadius = createFlattenedFunc(createSphereVerticesRadius)
-      const createRingWithVertexColorsBufferInfoGuard = createFlattenedFunc(createSphereVerticesGuard)
+      const createRingWithVertexColorsBufferInfo = createFlattenedFunc(createSphereVertices, 200)
+      const createRingWithVertexColorsBufferInfoRadius = createFlattenedFunc(createSphereVerticesRadius, 100)
+      const createRingWithVertexColorsBufferInfoGuard = createFlattenedFunc(createSphereVerticesGuard, 80)
 
       const topPlane = createRingWithVertexColorsBufferInfo(gl, ir, or, w, spi, epi, h);
       const bottomPlane = createRingWithVertexColorsBufferInfo(gl, ir, or, w, spi, epi, 1);
@@ -430,10 +416,11 @@ void main() {
       const guardInnerPlane = createRingWithVertexColorsBufferInfoGuard(gl, ir, or, w, spi, epi, h, 'inner');
       const outerPlane = createRingWithVertexColorsBufferInfoRadius(gl, or, w, spi, epi, h);
       const innerPlane = createRingWithVertexColorsBufferInfoRadius(gl, ir, w, spi, epi, h);
+      const planeTypes = [topPlane, bottomPlane, guardOuterPlane, guardInnerPlane, outerPlane, innerPlane]
+      planes.push(planeTypes)
+      planesCompNum = planeTypes.length
 
-      planes = [topPlane, bottomPlane, guardOuterPlane, guardInnerPlane, outerPlane, innerPlane]
-
-      for (const plane of planes) {
+      for (const plane of planeTypes) {
         let uniformInfo = {
           u_colorMult: color,
           u_matrix: m4.identity(),
@@ -447,9 +434,9 @@ void main() {
         })
       }
     }
-    getObjectsToDrawObj({ ir: 70, or: 90, w: 20, spi: 0, epi: Math.PI * 0.4, h: 30, color: [0.5, 1, 0.5, 1] })
-    getObjectsToDrawObj({ ir: 70, or: 90, w: 20, spi: Math.PI * 0.4, epi: Math.PI * 1, h: 20, color: [0.5, 0.5, 0.8, 1] })
-    getObjectsToDrawObj({ ir: 70, or: 90, w: 30, spi: Math.PI * 1, epi: Math.PI * 2, h: 40, color: [0.5, 0.3, 0.3, 1] })
+    getObjectsToDrawObj({ ir: 0, or: 90, w: 20, spi: 0, epi: Math.PI * 0.4, h: 30, color: [0.3, 1, 0.5, 1] })
+    getObjectsToDrawObj({ ir: 0, or: 90, w: 20, spi: Math.PI * 0.4, epi: Math.PI * 1, h: 20, color: [0.5, 0.5, 0.8, 1] })
+    getObjectsToDrawObj({ ir: 0, or: 90, w: 30, spi: Math.PI * 1, epi: Math.PI * 2, h: 40, color: [0.9, 0.3, 0.3, 1] })
 
     function computeMatrix (viewProjectionMatrix, translation, xRotation, yRotation) {
       var matrix = m4.translate(viewProjectionMatrix,
@@ -506,11 +493,14 @@ void main() {
 
       function drawPointText (object, index) {
         let point
+
         for (let i = 0; i < textPointList.length; i++) {
-          if (index === i * planes.length) point = textPointList[i]
+          if (index === i * planesCompNum) {
+            point = textPointList[i]
+          }
         }
 
-        var clipspace = m4.transformVector(object.uniforms.u_matrix, point);
+        var clipspace = m4.transformVector(matrix, point);
         clipspace[0] /= clipspace[3];
         clipspace[1] /= clipspace[3];
         var pixelX = (clipspace[0] * 0.5 + 0.5) * gl.canvas.width;
@@ -537,7 +527,7 @@ void main() {
         gl.uniform3fv(reverseLightDirectionLocation, m4.normalize([0.5, 0.7, 1]));
 
         // ------ Draw the objects --------
-        if (index % planes.length === 0) {
+        if (index % planesCompNum === 0) {
           drawPointText(object, index)
         }
 
@@ -554,7 +544,6 @@ void main() {
         // Draw
         gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements)
       });
-      console.log(textOptList);
       drawText(textOptList)
 
       requestAnimationFrame(drawScene);
@@ -573,7 +562,7 @@ void main() {
   function drawText (textOpts) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.font = '20px 宋体'
-    ctx.strokeStyle = 'blue'
+    ctx.strokeStyle = '#fff'
     // 绘制空心文字
     for (const opt of textOpts) {
       ctx.strokeText(opt.text, opt.x, opt.y)

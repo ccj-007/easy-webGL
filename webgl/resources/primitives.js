@@ -478,7 +478,6 @@
         texCoords.push(1 - u, v);
       }
     }
-    console.log(positions)
 
     const numVertsAround = subdivisionsAxis + 1;
     const indices = webglUtils.createAugmentedTypedArray(3, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
