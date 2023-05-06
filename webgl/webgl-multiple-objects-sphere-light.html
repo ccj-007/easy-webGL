@@ -1,0 +1,356 @@
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>WebGL - Multiple Objects - List</title>
+</head>
+<style>
+  body {
+    background: #000;
+  }
+</style>
+
+<body>
+  <canvas id="canvas"></canvas>
+</body>
+<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+<script src="resources/webgl-utils.js"></script>
+<script src="resources/m4.js"></script>
+<script src="resources/primitives.js"></script>
+<script id="vertex-shader-3d" type="x-shader/x-vertex">
+attribute vec4 a_position;
+
+attribute vec4 a_color;
+varying vec4 v_color;
+
+attribute vec3 a_normal;
+varying vec3 v_normal;
+
+uniform mat4 u_matrix;
+
+uniform mat4 u_world;
+uniform vec3 u_lightWorldPosition;
+uniform mat4 u_worldViewProjection;
+uniform mat4 u_worldInverseTranspose;
+uniform vec3 u_viewWorldPosition;
+
+varying vec3 v_surfaceToLight;
+varying vec3 v_surfaceToView;
+
+void main() {
+   gl_Position = u_matrix * a_position ;
+  //gl_Position =   u_matrix * a_position;
+  
+  // 世界坐标系下的动态法向量
+  v_normal = mat3(u_worldInverseTranspose) * a_normal;
+  
+  // 在世界坐标系下得到点光源到面的向量
+  vec3 surfaceWorldPosition = (u_world * a_position).xyz;
+  v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition;
+
+  // 计算表面到相机的方向
+  // 然后传递到片段着色器
+  v_surfaceToView = u_viewWorldPosition - surfaceWorldPosition;
+
+  v_color = a_color;
+}
+</script>
+<script id="fragment-shader-3d" type="x-shader/x-fragment">
+precision mediump float;
+
+varying vec4 v_color;
+
+varying vec3 v_normal;
+varying vec3 v_surfaceToLight;
+varying vec3 v_surfaceToView;
+
+uniform float u_shininess;
+uniform vec4 u_color;
+
+uniform vec3 u_lightColor;
+uniform vec3 u_specularColor;
+
+uniform vec3 u_lightDirection;
+uniform float u_innerLimit;   
+uniform float u_outerLimit;  
+
+void main() {
+  vec3 normal = normalize(v_normal);
+  // 计算高光
+  vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
+  vec3 surfaceToViewDirection = normalize(v_surfaceToView);
+  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);
+  
+  float dotFromDirection = dot(surfaceToLightDirection, -u_lightDirection);
+   float limitRange = u_innerLimit - u_outerLimit;
+  float inLight = clamp((dotFromDirection - u_outerLimit) / limitRange, 0.0, 1.0);
+  float light = inLight * dot(normal, surfaceToLightDirection);
+  float specular = inLight * pow(dot(normal, halfVector), u_shininess);
+  gl_FragColor = u_color;
+  gl_FragColor.rgb *= light * u_lightColor;
+  gl_FragColor.rgb += specular * u_specularColor;
+}
+</script>
+<script>
+  "use strict";
+  const options = {
+    lightX: 43,
+    lightY: 13,
+    lightZ: 82,
+    shininess: 8,
+    lightColor_r: .4,
+    lightColor_g: 1,
+    lightColor_b: 1,
+    sphereColor_r: .7,
+    sphereColor_g: .5,
+    sphereColor_b: 1,
+    innerLimit: 20,
+    outerLimit: 200,
+  }
+
+  function createGUI () {
+    const gui = new dat.GUI();
+    gui.add(options, 'lightX', 0, 100)
+    gui.add(options, 'lightY', 0, 100)
+    gui.add(options, 'lightZ', 0, 100)
+    gui.add(options, 'shininess', 0, 1000)
+    gui.add(options, 'lightColor_r', 0, 1)
+    gui.add(options, 'lightColor_g', 0, 1)
+    gui.add(options, 'lightColor_b', 0, 1)
+    gui.add(options, 'sphereColor_r', 0, 1)
+    gui.add(options, 'sphereColor_g', 0, 1)
+    gui.add(options, 'sphereColor_b', 0, 1)
+    gui.add(options, 'innerLimit', 1, 600)
+    gui.add(options, 'outerLimit', 1, 600)
+  }
+
+  function createSphere (gl, radius, divideByYAxis, divideByCircle) {
+    let yUnitAngle = Math.PI / divideByYAxis;
+    let circleUnitAngle = (Math.PI * 2) / divideByCircle;
+    let positions = [];
+    let normals = [];
+    for (let i = 0; i <= divideByYAxis; i++) {
+      let unitY = Math.cos(yUnitAngle * i);
+      let yValue = radius * unitY;
+
+      for (let j = 0; j <= divideByCircle; j++) {
+        let unitX = Math.sin(yUnitAngle * i) * Math.cos(circleUnitAngle * j);
+        let unitZ = Math.sin(yUnitAngle * i) * Math.sin(circleUnitAngle * j);
+        let xValue = radius * unitX;
+        let zValue = radius * unitZ;
+        positions.push(xValue, yValue, zValue);
+        normals.push(unitX, unitY, unitZ);
+      }
+    }
+
+    let indices = [];
+    let circleCount = divideByCircle + 1;
+    for (let j = 0; j < divideByCircle; j++) {
+      for (let i = 0; i < divideByYAxis; i++) {
+        indices.push(i * circleCount + j);
+        indices.push(i * circleCount + j + 1);
+        indices.push((i + 1) * circleCount + j);
+
+        indices.push((i + 1) * circleCount + j);
+        indices.push(i * circleCount + j + 1);
+        indices.push((i + 1) * circleCount + j + 1);
+      }
+    }
+    let vertices = {
+      position: new Float32Array(positions),
+      indices: new Uint16Array(indices),
+      normal: new Float32Array(normals)
+    };
+    return webglUtils.createBufferInfoFromArrays(gl, vertices);
+  }
+
+  function main () {
+    var canvas = document.querySelector("#canvas");
+    var gl = canvas.getContext("webgl");
+    canvas.style.width = window.innerWidth + 'px'
+    canvas.style.height = window.innerHeight + 'px'
+    createGUI()
+    if (!gl) return
+
+    const sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(gl, 40, 24, 48);
+    const cubeBufferInfo = primitives.createCubeWithVertexColorsBufferInfo(gl, 15);
+    const coneBufferInfo = primitives.createTruncatedConeWithVertexColorsBufferInfo(gl, 15, 0, 20, 12, 1, true, false);
+
+    // setup GLSL program
+    var programInfo = webglUtils.createProgramInfo(gl, ["vertex-shader-3d", "fragment-shader-3d"]);
+    const { program } = programInfo
+    function degToRad (d) {
+      return d * Math.PI / 180;
+    }
+    var cameraAngleRadians = degToRad(0);
+    var fieldOfViewRadians = degToRad(60);
+    var cameraHeight = 50;
+
+    // lookup uniforms
+    var worldViewProjectionLocation = gl.getUniformLocation(program, "u_worldViewProjection");
+    var worldInverseTransposeLocation = gl.getUniformLocation(program, "u_worldInverseTranspose");
+    var colorLocation = gl.getUniformLocation(program, "u_color");
+    var lightWorldPositionLocation =
+      gl.getUniformLocation(program, "u_lightWorldPosition");
+    var worldLocation =
+      gl.getUniformLocation(program, "u_world");
+
+    // 得到强度因子和光源位置的变量
+    var lightWorldPositionLocation =
+      gl.getUniformLocation(program, "u_lightWorldPosition");
+    var viewWorldPositionLocation =
+      gl.getUniformLocation(program, "u_viewWorldPosition");
+    var shininessLocation = gl.getUniformLocation(program, "u_shininess");
+
+    // 得到高光和光源的变量
+    var lightColorLocation =
+      gl.getUniformLocation(program, "u_lightColor");
+    var specularColorLocation =
+      gl.getUniformLocation(program, "u_specularColor");
+
+    var lightDirectionLocation = gl.getUniformLocation(program, "u_lightDirection");
+    var limitLocation = gl.getUniformLocation(program, "u_limit");
+    var innerLimitLocation = gl.getUniformLocation(program, "u_innerLimit");
+    var outerLimitLocation = gl.getUniformLocation(program, "u_outerLimit");
+
+
+    // Uniforms for each object.
+    var sphereUniforms = {
+      u_colorMult: [1, 1, 1, 1],
+      u_matrix: m4.identity(),
+    };
+    var cubeUniforms = {
+      u_colorMult: [1, 0.5, 0.5, 1],
+      u_matrix: m4.identity(),
+    }; var coneUniforms = {
+      u_colorMult: [0.5, 0.5, 1, 1],
+      u_matrix: m4.identity(),
+    };
+    var sphereTranslation = [0, 0, 0];
+    var cubeTranslation = [0, 0, 0];
+    var coneTranslation = [0, 0, 0];
+
+    var objectsToDraw = [{
+      programInfo: programInfo,
+      bufferInfo: sphereBufferInfo,
+      uniforms: sphereUniforms,
+    }];
+
+    function computeMatrix (viewProjectionMatrix, translation, xRotation, yRotation) {
+      var lightDirection = [options.lightX, options.lightY, options.lightZ];
+      var limit = degToRad(options.limit);
+      var matrix1 = m4.translation(
+        translation[0],
+        translation[1],
+        translation[2]);
+      var matrix2 = m4.xRotation(xRotation);
+      var matrix3 = m4.yRotation(yRotation);
+      var matrixRotate = m4.multiply(matrix2, matrix3)
+      let matrixSum = m4.multiply(matrix1, matrixRotate);
+
+      var worldMatrix = matrixSum
+      var worldViewProjectionMatrix = m4.multiply(viewProjectionMatrix, worldMatrix);
+      // 处理缩放导致的法向量错误变化
+      var worldInverseMatrix = m4.inverse(worldMatrix);
+      var worldInverseTransposeMatrix = m4.transpose(worldInverseMatrix);
+
+      gl.uniform3fv(lightDirectionLocation, lightDirection);
+      gl.uniform1f(limitLocation, Math.cos(limit));
+
+      // Set the matrices
+      gl.uniformMatrix4fv(worldViewProjectionLocation, false, worldViewProjectionMatrix);
+      gl.uniformMatrix4fv(worldInverseTransposeLocation, false, worldInverseTransposeMatrix);
+      gl.uniformMatrix4fv(worldLocation, false, worldMatrix);
+      gl.uniform3fv(lightWorldPositionLocation, [options.lightX, options.lightY, options.lightZ]);
+      gl.uniform1f(shininessLocation, options.shininess);
+      // 设置光照颜色
+      gl.uniform3fv(lightColorLocation, m4.normalize([options.lightColor_r, options.lightColor_g, options.lightColor_b]));  // 红光
+      // 设置高光颜色
+      gl.uniform3fv(specularColorLocation, m4.normalize([options.lightColor_r, options.lightColor_g, options.lightColor_b]));  // 红光
+      gl.uniform4fv(colorLocation, [options.sphereColor_r, options.sphereColor_g, options.sphereColor_b, 1]);  // 红光
+      gl.uniform1f(innerLimitLocation, Math.cos(options.innerLimit));
+      gl.uniform1f(outerLimitLocation, Math.cos(options.outerLimit));
+      return worldViewProjectionMatrix
+    }
+
+    requestAnimationFrame(drawScene);
+
+    // Draw the scene.
+    function drawScene (time) {
+      time *= 0.0005;
+
+      webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+
+      // Tell WebGL how to convert from clip space to pixels
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+      gl.enable(gl.CULL_FACE);
+      gl.enable(gl.DEPTH_TEST);
+
+      // Clear the canvas AND the depth buffer.
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      // Compute the projection matrix
+      var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+      var projectionMatrix =
+        m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
+
+      // Compute the camera's matrix using look at.
+      var cameraPosition = [0, 0, 100];
+      var target = [0, 0, 0];
+      var up = [0, 1, 0];
+      var cameraMatrix = m4.lookAt(cameraPosition, target, up);
+      gl.uniform3fv(viewWorldPositionLocation, cameraPosition);
+      // Make a view matrix from the camera matrix.
+      var viewMatrix = m4.inverse(cameraMatrix);
+      var viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+      var sphereYRotation = -time;
+      var sphereXRotation = time
+      var cubeXRotation = -time;
+      var cubeYRotation = time;
+      var coneXRotation = time;
+      var coneYRotation = -time;
+      sphereUniforms.u_matrix = computeMatrix(
+        viewProjectionMatrix,
+        sphereTranslation,
+        sphereXRotation,
+        sphereYRotation);
+
+      cubeUniforms.u_matrix = computeMatrix(
+        viewProjectionMatrix,
+        cubeTranslation,
+        cubeXRotation,
+        cubeYRotation);
+
+      coneUniforms.u_matrix = computeMatrix(
+        viewProjectionMatrix,
+        coneTranslation,
+        coneXRotation,
+        coneYRotation);
+      objectsToDraw.forEach(function (object) {
+        var programInfo = object.programInfo;
+        var bufferInfo = object.bufferInfo;
+
+        gl.useProgram(programInfo.program);
+
+        // Setup all the needed attributes.
+        webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+
+        // Set the uniforms.
+        webglUtils.setUniforms(programInfo, object.uniforms);
+
+        // Draw
+        gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
+      });
+
+      requestAnimationFrame(drawScene);
+    }
+  }
+
+  main();
+</script>
+
+</html>

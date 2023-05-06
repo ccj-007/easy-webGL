@@ -1,12 +1,3 @@
-<!--
- * @Author: chen 596487930@qq.com
- * @Date: 2023-04-03 23:38:41
- * @LastEditors: chen 596487930@qq.com
- * @LastEditTime: 2023-04-06 22:57:41
- * @FilePath: \easy-webGL\webgl\webgl-multiple-objects-huan.html
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
-<!-- Licensed under a BSD license. See license.html for license -->
 <!DOCTYPE html>
 <html>
 
@@ -434,9 +425,9 @@ void main() {
         })
       }
     }
-    getObjectsToDrawObj({ ir: 0, or: 90, w: 20, spi: 0, epi: Math.PI * 0.4, h: 30, color: [0.3, 1, 0.5, 1] })
-    getObjectsToDrawObj({ ir: 0, or: 90, w: 20, spi: Math.PI * 0.4, epi: Math.PI * 1, h: 20, color: [0.5, 0.5, 0.8, 1] })
-    getObjectsToDrawObj({ ir: 0, or: 90, w: 30, spi: Math.PI * 1, epi: Math.PI * 2, h: 40, color: [0.9, 0.3, 0.3, 1] })
+    getObjectsToDrawObj({ ir: 60, or: 90, w: 20, spi: 0, epi: Math.PI * 0.4, h: 30, color: [0.3, 1, 0.5, 1] })
+    getObjectsToDrawObj({ ir: 60, or: 90, w: 20, spi: Math.PI * 0.4, epi: Math.PI * 1, h: 20, color: [0.5, 0.5, 0.8, 1] })
+    getObjectsToDrawObj({ ir: 60, or: 90, w: 30, spi: Math.PI * 1, epi: Math.PI * 2, h: 40, color: [0.9, 0.3, 0.3, 1] })
 
     function computeMatrix (viewProjectionMatrix, translation, xRotation, yRotation) {
       var matrix = m4.translate(viewProjectionMatrix,
